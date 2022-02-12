@@ -9,79 +9,13 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 from tqdm import tqdm
 
 
-# ####path stuff
-#
-# #current directory
-# path = os.getcwd()
-# print("Current Directory", path)
-#
-# #parent directory
-# parent_path = os.path.abspath(os.path.join(path, os.pardir))
-# print("Parent Directory", parent_path)
-#
-# #dane -> annotations path
-# path_to_xml = os.path.join(parent_path, 'dane/annotations/*.xml')
-# print("Path to xml", path_to_xml)
-# ###test
-# # for file in glob.glob(path_to_xml):
-# #     dom = ElementTree.parse(file)
-# #     name = dom.findall('object/name')
-# #
-# #     for n in name:
-# #             print(n.text)
-#
-#
-# for file in glob.glob(path_to_xml): #iteracja po wszystkich xmlach w katalogu
-#
-#     # full_file = os.path.abspath(os.path.join('dane', 'annotations', file))
-#
-#     dom = ElementTree.parse(file)
-#     png_name = dom.findall('filename')
-#     for p in png_name:
-#         ori_png = os.path.join(parent_path,'dane', 'images', p.text)   ####
-#
-#     name = dom.findall('object/name')
-#     found = 0;
-#     for n in name:
-#         if n.text == "speedlimit":
-#             found = 1;
-#
-#     if found == 1:
-#         shutil.copy2(file, os.path.join(parent_path, 'speedlimit/annotations')) #moving xml file speedlimit cat.
-#         shutil.copy2(ori_png, os.path.join(parent_path, 'speedlimit/images')) #moving assigned png image to speedlimit cat.
-#         print('moved:', ori_png)
-#     else:
-#         shutil.copy2(file, os.path.join(parent_path, 'no_speedlimit/annotations'))  # moving xml file
-#         shutil.copy2(ori_png, os.path.join(parent_path, 'no_speedlimit/images'))  # moving assigned png file
-#
-# # i = 1
-# # for f in glob.glob(os.path.join(parent_path, 'speedlimit/annotations/*.xml')):
-# #     png_name1 = dom.findall('filename')
-# #     for p in png_name1:
-# #         ori_png1 = os.path.join(parent_path, 'dane', 'images', p.text)  ####
-# #     if i%4 == 0:
-# #         shutil.copy2(f, os.path.join(parent_path, 'test/annotations'))
-# #         shutil.copy2(ori_png1, os.path.join(parent_path, 'test/images'))
-# #
-# #     else:
-# #         shutil.copy2(f, os.path.join(parent_path, 'train/annotations'))
-# #         shutil.copy2(ori_png1, os.path.join(parent_path, 'train/images'))
-# #     i+=1
-#
-# # for f in glob.glob(parent_path, 'speedlimit/annotations/*.xml'):
-
-#funkcja do ładowania danych z input do fazy testowania
-
-
-###*funkcja obsługująca wejście do testowania*###
-
 ###*Funkcja ładująca do słownika dane do testowania z inputu użytkownika*###
 
 def order_load():
     i = 0
     order = input()
     if order == "classify":
-        print("jest")
+        # print("Put your data here")
         n_files_s = input()             #number of files to analyze
         n_files = int(n_files_s)
         dicts = []                      #list of dictionaries; each dictionary represents png file and its attributes
@@ -109,7 +43,7 @@ def order_load():
         # print(dicts)
         return dicts
 
-###*Funkcja zwracająca listę przyciętych znaków speedlimit*###
+###*Funkcja zwracająca listę przyciętych*###
 
 def crop_photos(bbox_list, image_path):
     fragmented_photos = []
@@ -120,6 +54,9 @@ def crop_photos(bbox_list, image_path):
         fragmented_photos.append(crop_img)
 
     return fragmented_photos
+
+
+###*Funkcja zwracająca listę słowników {image: obrazek} wybranych i dociętych na podstawie komendy z terminala*###
 
 def load_testdata_basedon_term(dicts, parent_path):
 
@@ -139,7 +76,6 @@ def load_testdata_basedon_term(dicts, parent_path):
             fragmented_test_photos.append(sample)
 
     return fragmented_test_photos
-
 
 
 ###*Funkcja ładująca ścieżki xmli i png oraz wszystkie istotne informacje do listy słownikow, gdzie kazdy slownik to jeden obraz*###
@@ -175,7 +111,7 @@ def load_data_from_set(set, parent_path,):
             ymin = object.find('bndbox/ymin').text
             xmax = object.find('bndbox/xmax').text
             ymax = object.find('bndbox/ymax').text
-            bbox = (xmin, ymin, xmax, ymax)
+            bbox = (int(xmin), int(ymin), int(xmax), int(ymax))
             if(name == "speedlimit"):
                 speedlimit_data['bboxes'].append(bbox)
                 speedlimit_data['amount'] +=1
@@ -191,14 +127,56 @@ def load_data_from_set(set, parent_path,):
 
     return set_data
 
+def is_bbox_inblacklist(bbox, bboxes_blacklist):
 
-###*Funkcja przygotowująca (WYCINA FRAGMENTY) dane uczące na podstawie listy slownikow*###
+    x_min, y_min, x_max, y_max = bbox
+    for black_bbox in bboxes_blacklist:
 
-def prepare_samples(data):
+        black_x_min, black_y_min, black_x_max, black_y_max = black_bbox
+        if x_max < black_x_min or x_min > black_x_max:
+            continue
+        if y_max < black_y_min or y_min > black_y_max:
+            continue
+        return True
+
+    return False
+
+###*Funkcja zwracająca randomowe wycinki obrazów nie będące znakami w obrębie jednego zdjęcia*###
+
+def get_random_crops(image_path, bboxes_blacklist, n):
+
+    img = cv2.imread(image_path)
+    dimensions = img.shape
+    im_height = img.shape[0]
+    im_width = img.shape[1]
+
+    counter = 0
+    picked_list = []
+    while(counter < 100):
+        counter +=1
+        x1 = random.randint(0, im_width)
+        y1 = random.randint(0, im_height)
+        r_width = random.randint(int(im_width / 5), int(im_width / 3))
+        r_height = random.randint(int(im_height / 5), int(im_height / 3))
+        bbox = (x1, y1, x1+r_width, y1+r_height)
+        if x1+r_width >= im_width or y1+r_height >= im_height:           ###check if bbbox is in picture frame
+            continue
+        if is_bbox_inblacklist(bbox, bboxes_blacklist):                  ###check if bbox intersects with signs bboxes
+            continue
+        picked_list.append(bbox)
+        if len(picked_list) == n:
+            break
+
+    return crop_photos(picked_list, image_path)
+
+###*Funkcja przygotowująca (WYCINA FRAGMENTY, LABELUJE) dane uczące na podstawie listy slownikow*###
+
+def prepare_samples(data, add_random=True):
 
     output = []
-    for d in tqdm(data):
 
+    for d in data:
+        all_bboxes = []
         if d['speedlimit_data']['amount'] != 0:
             speed_lim_boxes = d['speedlimit_data']['bboxes']
             speed_lim_images = crop_photos(speed_lim_boxes, d['image_path'])
@@ -213,9 +191,18 @@ def prepare_samples(data):
                 negative_sample = {'image': sli, 'label':"non_speedlimit"}
                 output.append(negative_sample)
 
+        if add_random == True:
+            all_bboxes = d['speedlimit_data']['bboxes'] + d['non_speedlimit_data']['bboxes']
+            random_crops = get_random_crops(d['image_path'], all_bboxes, 1)
+            for crop in random_crops:
+                # cv2.imshow("png",crop)
+                # cv2.waitKey(0)
+                negative_sample = {'image': crop, 'label': "non_speedlimit"}
+                output.append(negative_sample)
+
     return output
 
-###*Funkcja dodająca featery
+###*Funkcja dodająca featury do próbek na podstawie wyuczonego słownika*###
 
 def add_features(data, vocabulary):
 
@@ -223,7 +210,7 @@ def add_features(data, vocabulary):
     flann = cv2.FlannBasedMatcher_create()
     bow = cv2.BOWImgDescriptorExtractor(sift, flann)
     bow.setVocabulary(vocabulary)
-    for sample in tqdm(data):
+    for sample in data:
         kpts = sift.detect(sample['image'], None)
         desc = bow.compute(sample['image'], kpts)
         if desc is None:     #check if desc is an array or is none(not defined)
@@ -233,7 +220,7 @@ def add_features(data, vocabulary):
 
     return data
 
-###*Funkcja zwracająca ilosc znakow speedlimit i non_speedlimit na podstawie listy slownikow{image:, label}*###
+###*Funkcja zwracająca ilosc znakow speedlimit i non_speedlimit na podstawie samples - listy slownikow{image:, label}*###
 
 def sample_summary(samples):
     speed_limit_number = 0
@@ -250,16 +237,12 @@ def sample_summary(samples):
 ###*Uczy BoVW i zwraca słownik*###
 
 def learn_bovw(data):
-    """
-    Learns BoVW dictionary and saves it as "voc.npy" file.
-    @param data: List of dictionaries, one for every sample, with entries "image" (np.array with image) and "label" (class_id).
-    @return: Nothing
-    """
+
     dict_size = 128
     bow = cv2.BOWKMeansTrainer(dict_size)
 
     sift = cv2.SIFT_create()
-    for sample in tqdm(data):
+    for sample in data:
         kpts = sift.detect(sample['image'], None)
         kpts, desc = sift.compute(sample['image'], kpts)
 
@@ -270,16 +253,9 @@ def learn_bovw(data):
 
     return vocabulary
 
-###*trenuje model na podstawie wektora featurów i labeli, zwraca nauczony model*###
+###*trenuje model na podstawie featurów i labeli, zwraca nauczony model*###
 
 def train(data):
-    """
-    Trains Random Forest classifier.
-    @param data: List of dictionaries, one for every sample, with entries "image" (np.array with image), "label" (class_id),
-                    "desc" (np.array with descriptor).
-    @return: Trained model.
-    """
-
 
     feature_vectors = []
     labels = []
@@ -294,25 +270,19 @@ def train(data):
 
     return rf
 
-###*Dokonuje predykcji dla dostarczonych
-def predict(rf, data):
-    """
-    Predicts labels given a model and saves them as "label_pred" (int) entry for each sample.
-    @param rf: Trained model.
-    @param data: List of dictionaries, one for every sample, with entries "image" (np.array with image), "label" (class_id),
-                    "desc" (np.array with descriptor).
-    @return: Data with added predicted labels for each sample.
-    """
-    # perform prediction using trained model and add results as "label_pred" (int) entry in sample
+###*Dokonuje predykcji dla dostarczonych danych*###
 
-    # for sample in data:
-    # sample.update({'prediction':rf.predict(sample['desc'])[0]})
-    for sample in data:
-        if sample['desc'] is not None:
-            predict = rf.predict(sample['desc'])
-            sample['label_pred'] = int(predict)
+def predict(model, single_data):
+
+    if single_data['feature_vector'] is None:
+        return "other"
+
+    predicted_label = model.predict([single_data['feature_vector']])[0]  # 1 element array
+    if predicted_label == "non_speedlimit":
+        predicted_label = "other"
+
     # ------------------
-    return data
+    return predicted_label
 
 
 def main():
@@ -325,88 +295,54 @@ def main():
     parent_path = os.path.abspath(os.path.join(path, os.pardir))
     #END DIRECTORIES
 
+
+    ##BEGIN TRAINING MODEL (you can uncomment the prints if you want to see whats goin' on ;) )
+
     # lista słowników przechowujących istotne informacje o wszystkich zdjęciach z folderu TRAIN
     dane = load_data_from_set('train', parent_path)
 
-    # pathpom = dane[0]['image_path']
-    # bnbSL = dane[0]['speedlimit_data']['bboxes']
-    # bnbNSL = dane[0]['non_speedlimit_data']['bboxes']
-
-
-
-    # przyciete = crop_photos(bnbNSL, pathpom)
-    # print("bnbSL", bnbSL, "N", bnbNSL)
-    # for pr in przyciete:
-    #     cv2.imshow("png",pr)
-    #     cv2.waitKey(0)
-
-    ##BEGIN TRAINING MODEL
-
-    print("Przygotowanie danych")
+    #przygotowanie danych z katalogu
+    # print("Przygotowanie danych")
     train_samples = prepare_samples(dane)
 
-    sample_summary(train_samples)
+    # sample_summary(train_samples)
 
-    print("Learn Bowv - get vobulary", flush=True)
+    #uczenie bovwa zwrócenie słownika
+    # print("Learn Bowv - get vobulary", flush=True)
     vocab = learn_bovw(train_samples)
 
-    print("Adding feature-vectors to samples", flush=True)
+    #dodanie ficzerów do danych treningowych
+    # print("Adding feature-vectors to samples", flush=True)
     train_samples = add_features(train_samples, vocab)
 
-    print("Start training rfc")
+    #trenowanie modelu
+    # print("Start training rfc")
     model = train(train_samples)
-    print("END training rfc")
+    # print("END training rfc")
 
     ##END TRAINING MODEL
 
-    ###BRUDNOPIS
-    print("Wyswietlam fotki: ")
+
+    predicted_labels_list = []
+    target_labels_list = []
+
+    ###BEGIN GET TEST DATA FROM CONSOLE
+
     zadane = order_load()
-    # for z in zadane:
-    #     print(z)
     demanded_croped_photos = load_testdata_basedon_term(zadane, parent_path)
-    print("Adding feature-vectors to TEST samples", flush=True)
-    demanded_test_data = add_features(demanded_croped_photos, vocab)                 ##adding features to samples
+    #samples based od on input order
+    demanded_test_samples = add_features(demanded_croped_photos, vocab)
 
-    # for zd in demanded_croped_photos:
-    #     cv2.imshow("png",zd['image'])
-    #     cv2.waitKey(0)
-
-    ###END BRUDNOPIS
-
-    # #BEGIN TEST
-    #
-    # #####test####
-    # # lista danych z folderu TEST
-    # dane_test = load_data_from_set('test', parent_path)
-    # test_samples = prepare_samples(dane_test)
-    #
-    # print("Adding feature-vectors to TEST samples", flush=True)
-    # test_samples = add_features(test_samples, vocab)
-    #
-    #
-    # predicted_labels_list = []
-    # target_labels_list = []
-    # for tr in tqdm(test_samples):
-    #      # cv2.imshow("png",tr['image'])
-    #      # print("Label: ", tr['label'])
-    #      try:
-    #         predicted_label = model.predict([tr['feature_vector']]) #1 element array
-    #      except ValueError as e:
-    #         continue
-    #         print(e)
-    #      predicted_labels_list.append(predicted_label)
-    #      target_labels_list.append(tr['label'])
-    #
-    # print("Summary: ")
-    # conf = confusion_matrix(target_labels_list, predicted_labels_list, labels=["speedlimit", "non_speedlimit"])
-    # print(conf)
-    # accur = accuracy_score(target_labels_list, predicted_labels_list)
-    # print(accur)
+    ###END GET DATA FROM CONSOLE
 
 
-         # print("predicted label: ", predicted_label)
-         # cv2.waitKey(0)
+
+    ###PREDYKCJA DLA DANYCH WCZYTANYCH Z TERMINALA
+
+    for tr in demanded_test_samples:
+        predicted_label = predict(model, tr)
+        print(predicted_label)
+
 
 
 
