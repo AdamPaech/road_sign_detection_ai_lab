@@ -1,5 +1,5 @@
 ### road_sign_detection_ai_lab
- Project realised as a final task in Artifficial Intelligence classes on Automatic control and robotics faculty, at Poznan University of Technology.
+ Project realised as a final task in *Introduction to Artificial Intelligence* classes on Automatic control and robotics faculty, at Poznan University of Technology.
  
  ## Table of contents
 * [Informacje ogólne](#informacje-ogólne)
@@ -12,7 +12,7 @@ Celem projektu jest konstrukcja rozwiązania opartego na Machine Learning, zdoln
 na narzuconym wycinku zdjęcia znajduje się znak ograniczenia prędkości - klasa "speedlimit", czy też inny (lub na podanym wycinku nie ma znaku) - klasa "other".
 
 ## Technologie
-Podczas realizacji projektu korzystano z Python 3.9 natomiast środowiskiem programistycznym był PyCharm Community Edition 2021.2.2.
+Podczas realizacji projektu korzystano z **Python 3.9**, natomiast środowiskiem programistycznym był **PyCharm Community Edition 2021.2.2.**
 	
 ## Opis działania
 Po uruchomieniu programu zapisanego w pliku *main.py* następuje wykonanie zapisanych w funkcji *main* poleceń. W pierwszej kolejności w sekcji *#DIRECTORIES* przechwytywane i
@@ -24,8 +24,8 @@ poszczególnym zdjęciom pliki .xml, tak by skojarzyć z odpowiednimi zdjęciami
 jedno zdjęcie ze zbioru. Słownik zawiera ścieżkę do pliku .png, .xml, a także informację o występowaniu i liczebności znaków z danej kategorii
 ("speedlimit" oraz "non_speedlimit") oraz współrzędne ramek ich położenia na obrazie. 
 
-Tak przygotowany zbiór trafia następnie do funkcji *prepare_samples(data, add_random = True)*, która jako argumenty przyjmuje wyżej opisaną listę oraz argument logiczny *add_random*
-- domyślnie *True* - który decyduje o tym, czy do zbioru treningowego dodawane będą losowe fragmenty zdjęć, nie zawierające elementów zdefiniowanych w plikach .xml znaków drogowych.
+Tak przygotowany zbiór trafia następnie do funkcji *prepare_samples(data, add_random = True)*, która jako argumenty przyjmuje wyżej opisaną listę oraz argument logiczny *add_random*,
+domyślnie *True* - który decyduje o tym, czy do zbioru treningowego dodawane będą losowe fragmenty zdjęć, nie zawierające elementów zdefiniowanych w plikach .xml znaków drogowych.
 Na podstawie informacji czy dany znak należy do kategorii "speedlimit" czy też "nonspeedlimit" funkcja wycina odpowiednie fragmenty zdjęcia zawierające znak oraz nadaje im odpowiedni
 label. Do wycinania ramek wykorzystywana jest funkcja *crop_photos(bbox_list, image_path)*, która jako argumenty przyjmuje listę współrzędnych ramek oraz ścieżkę do zdjęcia z obrębu
 którego nastąpi wycinanie. 
@@ -66,6 +66,10 @@ jako argument przyjmuje wytrenowany model, a także dany fragment testowy. Funkc
 W celu uruchomienia programu należy zainstalować/zaimportować poniższe biblioteki:
 
 ```
+$ import glob
+$ import os
+$ import random
+$ from xml.etree import ElementTree
 $ import cv2
 $ from sklearn.ensemble import RandomForestClassifier
 ```
