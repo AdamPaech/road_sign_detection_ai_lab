@@ -57,9 +57,9 @@ ekstrahowane i poddane predykcji. By całość zadziałała prawidłowo struktur
 
 Tak wczytane dane poddane są działaniu funkcji *load_data_basedon_term(dicts, parent_path)*, która na podstawie nazw plików wprowadzonych w
 konsoli oraz współrzędnych ramek, zwraca listę wyciętych obrazów testowych. Następnie tak przygotowane dane poddane są działaniu funkcji *add_features*, której działanie zostało 
-opisane powyżej. Następnie w pętli iterującej po każdym liście testowych fragmentów, porgram dokonuje predykcji realizowanej przez funkcję *predict(model, single_data)*, która
-jako argument przyjmuje wytrenowany model, a także dany fragment testowy. Funkcja zwraca łańcuch znaków *predicted_label*, który następnie printowany jest w konsoli w postaci:
-"speedlimit" - jeśli wykryty został znak ograniczenia prędkości, lub other jeśli inny (ew. fragment otoczenia nie będący znakiem). 
+opisane powyżej. Następnie w pętli iterującej po każdym elemencie w liście testowych fragmentów, program dokonuje predykcji realizowanej przez funkcję *predict(model, single_data)*,
+która jako argument przyjmuje wytrenowany model, a także dany fragment testowy. Funkcja zwraca łańcuch znaków *predicted_label*, który następnie printowany jest w konsoli w postaci:
+**"speedlimit"** - jeśli wykryty został znak ograniczenia prędkości, lub **"other"** jeśli inny (ew. fragment otoczenia nie będący znakiem). 
 
 
 ## Setup
