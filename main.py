@@ -335,7 +335,7 @@ def main():
     parent_path = os.path.abspath(os.path.join(path, os.pardir))
     # END DIRECTORIES
 
-    ##BEGIN TRAINING MODEL (you can uncomment the prints if want to see whats goin' on :) )
+    ##BEGIN TRAINING MODEL (you can uncomment the prints if want to see whats goin' on :] )
 
     # lista słowników przechowujących istotne informacje o wszystkich zdjęciach z folderu TRAIN
     dane = load_data_from_set("train", parent_path)
