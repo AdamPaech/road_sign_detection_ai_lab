@@ -89,20 +89,21 @@ def load_data_from_set(
     set,
     parent_path,
 ):
-    path_to_annotations = os.path.join(parent_path, set, "annotations/*.xml")
-    path_to_images = os.path.join(parent_path, set, "images/*.png")
+    path_to_annotations = os.path.join(parent_path, set, "annotations/*.xml") #path to annot
+    path_to_images = os.path.join(parent_path, set, "images")  #path to images
     annotations_paths = glob.glob(path_to_annotations)
-    images_paths = glob.glob(path_to_images)
+    #images_paths = glob.glob(path_to_images)
 
-    i = 0
+
     set_data = []
     for ap in annotations_paths:
         single_file = {}
         dom = ElementTree.parse(ap)
 
         # przypisanie ścieżek do xml i do obrazków
-        single_file["annotation_path"] = annotations_paths[i]
-        single_file["image_path"] = images_paths[i]
+        single_file["annotation_path"] = ap
+        base_file_name = os.path.basename(ap).split('.')[0]
+        single_file["image_path"] = os.path.join(path_to_images, f"{base_file_name}.png")
 
         tree = ElementTree.parse(ap)
         root = tree.getroot()
@@ -134,7 +135,6 @@ def load_data_from_set(
         ] = non_speedlimit_data  # add dict for non_speedlimitdata sign to general dict under key
 
         set_data.append(single_file)  # add general dict to the list
-        i += 1
 
     return set_data
 
@@ -357,7 +357,7 @@ def main():
     # trenowanie modelu
     # print("Start training rfc")
     model = train(train_samples)
-    #print("END of training")
+    # print("END of training")
 
     ##END TRAINING MODEL
 
