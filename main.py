@@ -6,6 +6,8 @@ from xml.etree import ElementTree
 import cv2
 from sklearn.ensemble import RandomForestClassifier
 
+##abcd
+
 # TODO Jakość kodu i raport (4/4)
 
 
